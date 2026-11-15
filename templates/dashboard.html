@@ -1,0 +1,695 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Dashboard | DonorMatch AI</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #fff5f6;
+            color: #333;
+        }
+
+        header {
+            background: #9f1239;
+            color: white;
+            padding: 20px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        header a {
+            background: white;
+            color: #9f1239;
+            text-decoration: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 1150px;
+            margin: 35px auto;
+            padding: 0 20px;
+        }
+
+        .welcome {
+            margin-bottom: 25px;
+        }
+
+        .welcome h2 {
+            color: #9f1239;
+            margin-bottom: 8px;
+        }
+
+        .welcome p {
+            color: #777;
+        }
+
+        .blood-card, .panel {
+            background: white;
+            padding: 25px;
+            border-radius: 14px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .blood-card {
+            border-left: 5px solid #be123c;
+        }
+
+        .blood-card h3 {
+            color: #9f1239;
+            margin-bottom: 12px;
+        }
+
+        .blood-group {
+            font-size: 35px;
+            font-weight: bold;
+            color: #be123c;
+        }
+
+        .panel h2 {
+            color: #9f1239;
+            margin-bottom: 18px;
+        }
+
+        .notification {
+            background: #fff1f2;
+            border-left: 4px solid #be123c;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .notification small {
+            display: block;
+            color: #888;
+            margin-top: 8px;
+        }
+
+        .match-card {
+            border: 1px solid #ffe4e6;
+            padding: 18px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            background: #fffafa;
+        }
+
+        .match-card h3 {
+            color: #9f1239;
+            margin-bottom: 12px;
+        }
+
+        .match-card p {
+            margin: 8px 0;
+        }
+
+        button, .action-link {
+            background: #9f1239;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 7px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        button:hover, .action-link:hover {
+            background: #881337;
+        }
+
+        .decline {
+            background: #777;
+        }
+
+        .decline:hover {
+            background: #555;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #ddd;
+            border-radius: 7px;
+            margin: 8px 0 15px;
+        }
+
+        label {
+            font-weight: bold;
+            color: #555;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+        }
+
+        .empty {
+            color: #888;
+            padding: 12px 0;
+        }
+
+        .flash {
+            background: #ffe4e6;
+            color: #9f1239;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 550px;
+        }
+
+        th, td {
+            padding: 13px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+        }
+
+        th {
+            color: #9f1239;
+            background: #fff1f2;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        footer {
+            text-align: center;
+            padding: 25px;
+            color: #888;
+        }
+
+        @media(max-width: 600px) {
+            .container {
+                padding: 0 12px;
+            }
+
+            .panel, .blood-card {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>♥ DonorMatch AI</h1>
+    <a href="{{ url_for('logout') }}">Logout</a>
+</header>
+
+<main class="container">
+
+    <section class="welcome">
+        <h2>Welcome, {{ name }}!</h2>
+        <p>Every Drop Matters. Together, we can save lives.</p>
+    </section>
+
+    <!-- FLASH MESSAGES -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="flash">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
+
+    <!-- NOTIFICATIONS FIRST -->
+    <section class="panel">
+
+        <h2>🔔 Your Notifications</h2>
+
+        {% if notifications %}
+
+            {% for notification in notifications %}
+
+                <div class="notification">
+
+                    <p>{{ notification.message }}</p>
+
+                    <small>{{ notification.created_at }}</small>
+
+                    {% if not notification.is_read %}
+
+                        <form method="POST"
+                              action="{{ url_for('mark_notification_read', notification_id=notification.notification_id) }}">
+
+                            <button type="submit">Mark as Read</button>
+
+                        </form>
+
+                    {% else %}
+
+                        <small>Already Read</small>
+
+                    {% endif %}
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <p class="empty">You have no new notifications.</p>
+
+        {% endif %}
+
+    </section>
+
+
+    <!-- DONOR DASHBOARD -->
+    {% if session.get('role') == 'donor' %}
+
+        <section class="blood-card">
+
+            <h3>Your Registered Blood Group</h3>
+
+            {% if donor %}
+
+                <div class="blood-group">
+                    {{ donor.blood_group }}
+                </div>
+
+                <p>Your registered blood group helps identify potentially compatible blood requests.</p>
+
+            {% else %}
+
+                <p>Donor profile information is not available.</p>
+
+            {% endif %}
+
+        </section>
+
+
+        <!-- AI DONOR ARRANGEMENT -->
+        <section class="panel">
+
+            <h2>🤖 AI Donor Arrangement</h2>
+
+            <p>
+                DonorMatch AI identifies potentially compatible blood requests
+                using blood-group compatibility, location and donor availability.
+            </p>
+
+            <p style="margin-top:10px;">
+                You can review compatible requests and respond when you are available.
+            </p>
+
+        </section>
+
+
+        <!-- COMPATIBLE BLOOD REQUESTS -->
+        <section class="panel">
+
+            <h2>🩸 Compatible Blood Requests</h2>
+
+            {% if available_requests %}
+
+                {% for item in available_requests %}
+
+                    <div class="match-card">
+
+                        <h3>Blood Request #{{ item.request_id }}</h3>
+
+                        <p><strong>Blood Group:</strong> {{ item.blood_group }}</p>
+
+                        <p><strong>Units Required:</strong> {{ item.units_required }}</p>
+
+                        <p><strong>Hospital:</strong> {{ item.hospital_name }}</p>
+
+                        <p><strong>City:</strong> {{ item.city }}</p>
+
+                        <p><strong>Urgency:</strong> {{ item.urgency|capitalize }}</p>
+
+                        <p><strong>Status:</strong> {{ item.status|replace('_', ' ')|capitalize }}</p>
+
+                        <form method="POST"
+                              action="{{ url_for('respond_to_request', request_id=item.request_id) }}">
+
+                            <button type="submit" name="response" value="accepted">
+                                Accept Request
+                            </button>
+
+                            <button type="submit" name="response" value="declined" class="decline">
+                                Decline Request
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                {% endfor %}
+
+            {% else %}
+
+                <p class="empty">
+                    No compatible blood requests are available at the moment.
+                </p>
+
+            {% endif %}
+
+        </section>
+
+
+        <!-- DONATION HISTORY -->
+        <section class="panel">
+
+            <h2>📋 Donation History</h2>
+
+            {% if donation_history %}
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Donation Date</th>
+                                <th>Hospital</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for donation in donation_history %}
+                                <tr>
+                                    <td>{{ donation.donation_date }}</td>
+                                    <td>{{ donation.hospital_name or 'Not specified' }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+            {% else %}
+
+                <p class="empty">No donation history available.</p>
+
+            {% endif %}
+
+            <h3 style="margin-top:20px; color:#9f1239;">
+                Total Donations: {{ total_donations }}
+            </h3>
+
+            <form method="POST" action="{{ url_for('add_donation') }}">
+
+                <label>Donation Date</label>
+                <input type="date" name="donation_date" max="{{ today_date }}" required>
+
+                <label>Hospital Name</label>
+                <input type="text" name="hospital_name" placeholder="Enter hospital name">
+
+                <button type="submit">Add Donation Record</button>
+
+            </form>
+
+        </section>
+
+
+        <!-- DONOR PROFILE -->
+        <section class="panel">
+
+            <h2>👤 Manage Donor Profile</h2>
+
+            {% if donor %}
+
+                <form method="POST" action="{{ url_for('update_donor_profile') }}">
+
+                    <div class="form-grid">
+
+                        <div>
+                            <label>Blood Group</label>
+                            <select name="blood_group" required>
+                                {% for group in ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] %}
+                                    <option value="{{ group }}"
+                                        {% if donor.blood_group == group %}selected{% endif %}>
+                                        {{ group }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label>City</label>
+                            <input type="text" name="city" value="{{ donor.city }}" required>
+                        </div>
+
+                        <div>
+                            <label>Area</label>
+                            <input type="text" name="area" value="{{ donor.area or '' }}">
+                        </div>
+
+                        <div>
+                            <label>Last Donation Date</label>
+                            <input type="date" name="last_donation_date"
+                                   value="{{ donor.last_donation_date or '' }}">
+                        </div>
+
+                    </div>
+
+                    <label>
+                        <input type="checkbox" name="available" value="1"
+                               style="width:auto;"
+                               {% if donor.available %}checked{% endif %}>
+                        Available to donate
+                    </label>
+
+                    <br>
+
+                    <label>
+                        <input type="checkbox" name="consent_to_contact" value="1"
+                               style="width:auto;"
+                               {% if donor.consent_to_contact %}checked{% endif %}>
+                        I consent to being contacted for blood requests
+                    </label>
+
+                    <br>
+
+                    <button type="submit">Update Profile</button>
+
+                </form>
+
+            {% else %}
+
+                <p class="empty">Donor profile not found.</p>
+
+            {% endif %}
+
+        </section>
+
+    {% endif %}
+
+
+    <!-- REQUESTER DASHBOARD -->
+    {% if session.get('role') == 'requester' %}
+
+        <!-- CREATE BLOOD REQUEST -->
+        <section class="panel">
+
+            <h2>🩸 Create Blood Request</h2>
+
+            <form method="POST" action="{{ url_for('create_request') }}">
+
+                <div class="form-grid">
+
+                    <div>
+                        <label>Required Blood Group</label>
+                        <select name="blood_group" required>
+                            <option value="">Select Blood Group</option>
+                            <option>A+</option>
+                            <option>A-</option>
+                            <option>B+</option>
+                            <option>B-</option>
+                            <option>AB+</option>
+                            <option>AB-</option>
+                            <option>O+</option>
+                            <option>O-</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label>Units Required</label>
+                        <input type="number" name="units_required" min="1" required>
+                    </div>
+
+                    <div>
+                        <label>Hospital Name</label>
+                        <input type="text" name="hospital_name" required>
+                    </div>
+
+                    <div>
+                        <label>City</label>
+                        <input type="text" name="city" required>
+                    </div>
+
+                    <div>
+                        <label>Area</label>
+                        <input type="text" name="area">
+                    </div>
+
+                    <div>
+                        <label>Urgency</label>
+                        <select name="urgency" required>
+                            <option value="normal">Normal</option>
+                            <option value="urgent">Urgent</option>
+                            <option value="emergency">Emergency</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label>Required By</label>
+                        <input type="datetime-local" name="required_by">
+                    </div>
+
+                </div>
+
+                <button type="submit">Submit Blood Request</button>
+
+            </form>
+
+        </section>
+
+
+        <!-- AI DONOR ARRANGEMENT -->
+        <section class="panel">
+
+            <h2>🤖 AI Donor Arrangement</h2>
+
+            <p>
+                Our AI-based recommendation system arranges potentially
+                compatible donors based on blood group, location,
+                availability and response history.
+            </p>
+
+            {% if recommendations_by_request %}
+
+                {% for request_id, donors in recommendations_by_request.items() %}
+
+                    <div class="match-card">
+
+                        <h3>Donors for Request #{{ request_id }}</h3>
+
+                        {% if donors %}
+
+                            {% for matched_donor in donors %}
+
+                                <p>
+                                    <strong>Donor:</strong>
+                                    {{ matched_donor.full_name }}
+                                </p>
+
+                                <p>
+                                    <strong>Blood Group:</strong>
+                                    {{ matched_donor.blood_group }}
+                                </p>
+
+                                <p>
+                                    <strong>City:</strong>
+                                    {{ matched_donor.city }}
+                                </p>
+
+                                <hr style="margin:12px 0; border:0; border-top:1px solid #eee;">
+
+                            {% endfor %}
+
+                        {% else %}
+
+                            <p class="empty">
+                                No compatible donors are currently available.
+                            </p>
+
+                        {% endif %}
+
+                    </div>
+
+                {% endfor %}
+
+            {% else %}
+
+                <p class="empty">
+                    No donor arrangements are available yet.
+                    Create a blood request to find compatible donors.
+                </p>
+
+            {% endif %}
+
+        </section>
+
+
+        <!-- REQUESTER BLOOD REQUEST HISTORY -->
+        <section class="panel">
+
+            <h2>📋 My Blood Requests</h2>
+
+            {% if my_requests %}
+
+                <div class="table-wrap">
+                    <table>
+
+                        <thead>
+                            <tr>
+                                <th>Request ID</th>
+                                <th>Blood Group</th>
+                                <th>Units</th>
+                                <th>Hospital</th>
+                                <th>Urgency</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            {% for item in my_requests %}
+
+                                <tr>
+                                    <td>{{ item.request_id }}</td>
+                                    <td>{{ item.blood_group }}</td>
+                                    <td>{{ item.units_required }}</td>
+                                    <td>{{ item.hospital_name }}</td>
+                                    <td>{{ item.urgency|capitalize }}</td>
+                                    <td>{{ item.status|replace('_', ' ')|capitalize }}</td>
+                                </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+                </div>
+
+            {% else %}
+
+                <p class="empty">You have not created any blood requests yet.</p>
+
+            {% endif %}
+
+        </section>
+
+    {% endif %}
+
+</main>
+
+<footer>
+    DonorMatch AI © 2026 | Every Drop Matters
+</footer>
+
+</body>
+</html>

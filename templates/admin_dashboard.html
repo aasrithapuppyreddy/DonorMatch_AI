@@ -1,0 +1,461 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Dashboard | DonorMatch AI</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        body {
+            background: #fff7f8;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            color: #333;
+        }
+
+        .navbar {
+            background: #8f1538;
+            color: white;
+            padding: 18px 6%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .navbar h2 {
+            margin: 0;
+        }
+
+        .logout-btn {
+            background: white;
+            color: #8f1538;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 30px auto;
+        }
+
+        .section {
+            background: white;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-radius: 14px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.06);
+        }
+
+        h2 {
+            color: #8f1538;
+            margin-top: 0;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 18px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 22px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+        }
+
+        .stat-card h3 {
+            color: #8f1538;
+            font-size: 28px;
+            margin: 10px 0;
+        }
+
+        .stat-card p {
+            margin: 0;
+            color: #666;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 13px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+        }
+
+        th {
+            background: #fde8ee;
+            color: #8f1538;
+        }
+
+        select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        button {
+            background: #a51d45;
+            color: white;
+            border: none;
+            padding: 9px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #7f1233;
+        }
+
+        .notification {
+            background: #fff4f6;
+            border-left: 4px solid #a51d45;
+            padding: 14px;
+            border-radius: 7px;
+            margin-bottom: 12px;
+        }
+
+        .notification small {
+            color: #777;
+        }
+
+        .flash-message {
+            padding: 12px;
+            margin-bottom: 12px;
+            border-radius: 7px;
+            background: #fde8ee;
+            color: #8f1538;
+        }
+
+        .empty-message {
+            color: #777;
+            padding: 12px 0;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                width: 94%;
+            }
+
+            .section {
+                padding: 16px;
+            }
+
+            th, td {
+                padding: 9px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <h2>♥ DonorMatch AI | Admin</h2>
+
+        <a href="{{ url_for('logout') }}" class="logout-btn">
+            Logout
+        </a>
+    </nav>
+
+
+    <main class="container">
+
+        <!-- FLASH MESSAGES -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="flash-message">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endwith %}
+
+
+        <h1>Welcome, Administrator!</h1>
+        <p>Manage users, blood requests and notifications.</p>
+
+
+        <!-- DASHBOARD STATISTICS -->
+        <div class="stats">
+
+            <div class="stat-card">
+                <p>Total Users</p>
+                <h3>{{ total_users }}</h3>
+            </div>
+
+            <div class="stat-card">
+                <p>Total Donors</p>
+                <h3>{{ total_donors }}</h3>
+            </div>
+
+            <div class="stat-card">
+                <p>Total Requesters</p>
+                <h3>{{ total_requesters }}</h3>
+            </div>
+
+            <div class="stat-card">
+                <p>Total Blood Requests</p>
+                <h3>{{ total_requests }}</h3>
+            </div>
+
+            <div class="stat-card">
+                <p>Pending Requests</p>
+                <h3>{{ pending_requests }}</h3>
+            </div>
+
+            <div class="stat-card">
+                <p>Accepted Responses</p>
+                <h3>{{ accepted_responses }}</h3>
+            </div>
+
+        </div>
+
+
+        <!-- ADMIN NOTIFICATIONS -->
+        <section class="section">
+
+            <h2>🔔 Admin Notifications</h2>
+
+            {% if notifications %}
+
+                {% for notification in notifications %}
+
+                    <div class="notification">
+
+                        <p>{{ notification.message }}</p>
+
+                        <small>
+                            {{ notification.created_at }}
+                        </small>
+
+                        {% if not notification.is_read %}
+
+                            <form method="POST"
+                                  action="{{ url_for('mark_notification_read',
+                                  notification_id=notification.notification_id) }}">
+
+                                <button type="submit">
+                                    Mark as Read
+                                </button>
+
+                            </form>
+
+                        {% else %}
+
+                            <small>Read</small>
+
+                        {% endif %}
+
+                    </div>
+
+                {% endfor %}
+
+            {% else %}
+
+                <p class="empty-message">
+                    No notifications available.
+                </p>
+
+            {% endif %}
+
+        </section>
+
+
+        <!-- RECENT USERS -->
+        <section class="section">
+
+            <h2>Recently Registered Users</h2>
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Role</th>
+                            <th>Registered On</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        {% for user in recent_users %}
+
+                            <tr>
+                                <td>{{ user.user_id }}</td>
+                                <td>{{ user.full_name }}</td>
+                                <td>{{ user.email }}</td>
+                                <td>{{ user.phone }}</td>
+                                <td>{{ user.role }}</td>
+                                <td>{{ user.created_at }}</td>
+                            </tr>
+
+                        {% else %}
+
+                            <tr>
+                                <td colspan="6">
+                                    No registered users found.
+                                </td>
+                            </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+
+        <!-- BLOOD REQUEST MANAGEMENT -->
+        <section class="section">
+
+            <h2>Blood Request Management</h2>
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>Request ID</th>
+                            <th>Requester</th>
+                            <th>Blood Group</th>
+                            <th>Units</th>
+                            <th>Hospital</th>
+                            <th>City</th>
+                            <th>Urgency</th>
+                            <th>Status</th>
+                            <th>Update</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        {% for blood_request in all_requests %}
+
+                            <tr>
+
+                                <td>
+                                    {{ blood_request.request_id }}
+                                </td>
+
+                                <td>
+                                    {{ blood_request.requester_name }}
+                                </td>
+
+                                <td>
+                                    {{ blood_request.blood_group }}
+                                </td>
+
+                                <td>
+                                    {{ blood_request.units_required }}
+                                </td>
+
+                                <td>
+                                    {{ blood_request.hospital_name }}
+                                </td>
+
+                                <td>
+                                    {{ blood_request.city }}
+                                </td>
+
+                                <td>
+                                    {{ blood_request.urgency }}
+                                </td>
+
+                                <td>
+                                    {{ blood_request.status }}
+                                </td>
+
+                                <td>
+
+                                    <form method="POST"
+                                          action="{{ url_for('admin_update_request',
+                                          request_id=blood_request.request_id) }}">
+
+                                        <select name="status" required>
+
+                                            <option value="pending"
+                                                {% if blood_request.status == 'pending' %}selected{% endif %}>
+                                                Pending
+                                            </option>
+
+                                            <option value="in_progress"
+                                                {% if blood_request.status == 'in_progress' %}selected{% endif %}>
+                                                In Progress
+                                            </option>
+
+                                            <option value="fulfilled"
+                                                {% if blood_request.status == 'fulfilled' %}selected{% endif %}>
+                                                Fulfilled
+                                            </option>
+
+                                            <option value="cancelled"
+                                                {% if blood_request.status == 'cancelled' %}selected{% endif %}>
+                                                Cancelled
+                                            </option>
+
+                                        </select>
+
+                                        <button type="submit">
+                                            Update
+                                        </button>
+
+                                    </form>
+
+                                </td>
+
+                            </tr>
+
+                        {% else %}
+
+                            <tr>
+                                <td colspan="9">
+                                    No blood requests found.
+                                </td>
+                            </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</body>
+</html>
